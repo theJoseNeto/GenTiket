@@ -41,4 +41,4 @@ class PassGen {
 
 
 }
-export default PassGen;
+export {PassGen};
