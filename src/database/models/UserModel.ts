@@ -7,7 +7,7 @@ const UserModel = model('User', UserSchema);
 
 
 interface BodyObject {
-    email: string,
+    useremail: string,
     password: string,
     fullname: string
 }
@@ -15,76 +15,60 @@ interface BodyObject {
 class AccessControl {
 
     body: BodyObject;
-    user?: any;
+    user: BodyObject;
     errors: string[];
 
     constructor(body: any) {
         this.body = body;
-        this.user = null;
+        this.user = this.body;
         this.errors = [];
      }
 
-    userExists = async () => {
-        this.user = await UserModel.findOne({ email: this.body.email });
-        if (!this.user) this.errors.push("Usuário não existe.");
-        return;
+    userExists = async (): Promise<void> => {
+        this.user = await UserModel.findOne({ useremail: this.body.useremail});
+        if (this.user) return;
+        this.errors.push("Usuário não existe.");
 
         }
 
-    emailValidation = (email: string): void => {
-
-        let emailValid = validator.isEmail(email);
+    emailValidation = (): void => {
+        let emailValid = validator.isEmail(this.body.useremail);
         if (!emailValid) this.errors.push('Esse email não é válido');
         return;
-
     }
 
-    encryptPassword = (password: string): void => {
+    encryptPassword = () => {
         const salt = bcryptjs.genSaltSync();
-        this.body.password = bcryptjs.hashSync(password, salt);
-        return;
+        this.body.password = bcryptjs.hashSync(this.body.password, salt);
     }
 
-   
 
 }
 
 export class Register extends AccessControl {
     
-
     register = async () => {
-        await this.userExists();
-        await this.emailValidation(this.body.email);
-        await this.encryptPassword(this.body.password);
+        this.userExists();
+        this.emailValidation();
+        this.encryptPassword();
         
         if (this.errors.length > 0) return;
 
-        this.user = UserModel.create(this.body);
+        this.user = await UserModel.create(this.body);
         
     }
-
-    
- 
 }
 
 export class Login extends AccessControl {
     
-    accessAccount = () => {
-        this.userExists()
-        this.emailValidation(this.body.email);
-        
-        if (this.errors.length > 0) return;
-        
-        if(!bcryptjs.compareSync(this.body.password, this.user.password)) {
+    accessAccount = async () => {
+        this.emailValidation();
+        await this.userExists();
+        if (!bcryptjs.compareSync(this.body.password, this.user.password)) {
             this.errors.push('Senha inválida');
-            this.user = null;
             return;
-        }
-
         
-     };
-    
-   
-
+        };
      
- }
+    }
+}
