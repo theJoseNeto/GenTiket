@@ -7,7 +7,7 @@ export const login = async (req: Request, res: Response) => {
         const user = new Login(req.body);
         await user.accessAccount();
 
-        if (user.errors.length > 0) return res.send(user.errors);
+    if (user.errors.length > 0) return res.send(user.errors);
         
         return res.send('logado')
 
